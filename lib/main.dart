@@ -7,7 +7,28 @@ void main() {
   ));
 }
 
-const String titleString = 'Demo Home Page';
+extension OptionalInfixAddition<T extends num> on T? {
+  T? operator +(T? other) {
+    final shadow = this;
+    if (shadow != null) {
+      return shadow + (other ?? 0) as T;
+    } else {
+      return null;
+    }
+  }
+}
+
+class Counter extends StateNotifier<int?> {
+  Counter() : super(null);
+  // state is equal to state,  if state is null then start with 1
+  // otherwise start with state + 1;
+  void increment() => state = state == null ? 1 : state + 1;
+  int? get value => state;
+}
+
+final counterProvider = StateNotifierProvider<Counter, int?>(
+  (ref) => Counter(),
+);
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -34,17 +55,26 @@ class HomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final date = ref.watch(currentDate);
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Hooks Riverpod'),
-      ),
-      body: Center(
-        child: Text(
-          date.toIso8601String(),
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          title: Consumer(
+            builder: (context, ref, child) {
+              final count = ref.watch(counterProvider);
+              final text =
+                  count == null ? 'Press the button' : count.toString();
+              return Text(text);
+            },
+          )),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextButton(
+              onPressed: () {
+                ref.read(counterProvider.notifier).increment();
+              },
+              child: const Text('Increment Counter'))
+        ],
       ),
     );
   }
