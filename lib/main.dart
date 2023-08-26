@@ -25,86 +25,61 @@ class MyApp extends StatelessWidget {
   }
 }
 
-enum City {
-  stockholm,
-  paris,
-  tokyo,
-}
+const names = [
+  'Alice',
+  'Bob',
+  'Charlie',
+  'David',
+  'Eve',
+  'Fred',
+  'Ginny',
+  'Harriet',
+  'Ileana',
+  'Joseph',
+  'Kincaid',
+  'Larry',
+];
 
-typedef WeatherEmoji = String;
-
-Future<WeatherEmoji> getWeather(City city) {
-  return Future.delayed(
-    const Duration(milliseconds: 500),
-    () => {
-      City.stockholm: '❄️',
-      City.paris: '🌧️',
-      City.tokyo: '💨',
-    }[city]!,
-  );
-}
-
-// UI writes to this and reads from this
-final currentCityProvider = StateProvider<City?>(
-  (ref) => null,
+final tickerProvider = StreamProvider(
+  (ref) => Stream.periodic(
+    const Duration(milliseconds: 300),
+    (computationCount) => computationCount + 1,
+  ),
 );
 
-const unknownWeatherEmoji = '🤷‍♂️';
-
-// UI reads this
-final weatherProvider = FutureProvider<WeatherEmoji>(
-  (ref) {
-    final city = ref.watch(currentCityProvider);
-    if (city != null) {
-      return getWeather(city);
-    } else {
-      return unknownWeatherEmoji;
-    }
-  },
-);
+final namesProvider = StreamProvider((ref) {
+  return ref.watch(tickerProvider.stream).map(
+        (count) => names.getRange(0, count),
+      );
+  // final a = ref.watch(tickerProvider.);
+});
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentWeather = ref.watch(weatherProvider);
+    final names = ref.watch(namesProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Weather'),
+        title: const Text('StreamProvider'),
       ),
-      body: Column(children: [
-        currentWeather.when(
-            data: (data) {
-              return Text(
-                data,
-                style: const TextStyle(fontSize: 80),
-              );
-            },
-            error: (error, stackTrace) => const Text('Error 🥲'),
-            loading: () => const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircularProgressIndicator(),
-                )),
-        Expanded(
-          child: ListView.builder(
-            itemCount: City.values.length,
-            itemBuilder: (context, index) {
-              final city = City.values[index];
-              final isSelected = city == ref.watch(currentCityProvider);
-              return ListTile(
-                title: Text(
-                  city.toString(),
-                ),
-                trailing: isSelected ? const Icon(Icons.check) : null,
-                onTap: () {
-                  ref.read(currentCityProvider.notifier).state = city;
-                },
-              );
-            },
-          ),
-        ),
-      ]),
+      body: names.when(
+          data: (names) {
+            return ListView.builder(
+              itemCount: names.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text(names.elementAt(index)),
+                );
+              },
+            );
+          },
+          error: (error, stackTrace) =>
+              const Text('Reached the end of the list!'),
+          loading: () => const Center(
+                child: CircularProgressIndicator(),
+              )),
     );
   }
 }
