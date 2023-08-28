@@ -1,222 +1,69 @@
 import 'package:flutter/material.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'main.g.dart';
+
+// A Counter example implemented with riverpod
 
 void main() {
-  runApp(const ProviderScope(
-    child: MyApp(),
-  ));
+  runApp(
+    // Adding ProviderScope enables Riverpod for the entire project
+    const ProviderScope(child: MyApp()),
+  );
 }
 
-@immutable
-class Film {
-  final String id;
-  final String title;
-  final String description;
-  final bool isFavorite;
+// @riverpod
+// int count(CountRef ref) => 0;
 
-  const Film({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.isFavorite,
-  });
-
-  Film copy({required bool isFavorite}) => Film(
-        id: id,
-        title: title,
-        description: description,
-        isFavorite: isFavorite,
-      );
+class MyApp extends ConsumerWidget {
+  const MyApp({super.key});
 
   @override
-  String toString() => 'Film(id: $id, '
-      'title: $title, '
-      'description: $description, '
-      'isfavorite: $isFavorite)';
-
-  @override
-  bool operator ==(covariant Film other) =>
-      id == other.id && isFavorite == other.isFavorite;
-
-  @override
-  int get hashCode => Object.hashAll([
-        id,
-        isFavorite,
-      ]);
-}
-
-const allFilms = [
-  Film(
-    id: '1',
-    title: 'The Shawshank Redemption',
-    description: 'Description for The Shawshank Redemption',
-    isFavorite: false,
-  ),
-  Film(
-    id: '2',
-    title: 'The Godfather',
-    description: 'Description for The Godfather',
-    isFavorite: false,
-  ),
-  Film(
-    id: '3',
-    title: 'The Godfather: Part II',
-    description: 'Description for The Godfather: Part II',
-    isFavorite: false,
-  ),
-  Film(
-    id: '4',
-    title: 'The Dark Knight',
-    description: 'Description for The Dark Knight',
-    isFavorite: false,
-  ),
-];
-
-class FilmsNotifier extends StateNotifier<List<Film>> {
-  FilmsNotifier() : super(allFilms);
-
-  void update(Film film, bool isFavorite) {
-    state = state
-        .map((thisFilm) => thisFilm.id == film.id
-            ? thisFilm.copy(isFavorite: isFavorite)
-            : thisFilm)
-        .toList();
-  }
-}
-
-enum FavoriteStatus {
-  all,
-  favorite,
-  notFavorite,
-}
-
-final favoriteStatusProvider = StateProvider<FavoriteStatus>(
-  (_) => FavoriteStatus.all,
-);
-
-final allFilmsProvider = StateNotifierProvider<FilmsNotifier, List<Film>>(
-  (ref) => FilmsNotifier(),
-);
-
-final favoriteFilmsProvider = Provider<Iterable<Film>>(
-  (ref) => ref.watch(allFilmsProvider).where(
-        (film) => film.isFavorite,
-      ),
-);
-final notFvoriteFilmsProvider = Provider<Iterable<Film>>(
-  (ref) => ref.watch(allFilmsProvider).where(
-        (film) => !film.isFavorite,
-      ),
-);
-
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
-      darkTheme: ThemeData.dark(useMaterial3: true),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const HomePage(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const MaterialApp(
+      home: Home(),
     );
   }
 }
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+/// Annotating a class by `@riverpod` defines a new shared state for your application,
+/// accessible using the generated [counterProvider].
+/// This class is both responsible for initializing the state (through the [build] method)
+/// and exposing ways to modify it (cf [increment]).
+@riverpod
+class Counter extends _$Counter {
+  /// Classes annotated by `@riverpod` **must** define a [build] function.
+  /// This function is expected to return the initial state of your shared state.
+  /// It is totally acceptable for this function to return a [Future] or [Stream] if you need to.
+  /// You can also freely define parameters on this method.
+  @override
+  int build() => 0;
+
+  void increment() => state++;
+}
+
+// @riverpod
+// int count(CountRef ref, {int id = 42}) {
+//   return 0;
+// }
+
+class Home extends ConsumerWidget {
+  const Home({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final countValue = ref.watch(counterProvider);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Films'),
+      appBar: AppBar(title: const Text('Counter example')),
+      body: Center(
+        child: Text('${ref.watch(counterProvider)}'),
       ),
-      body: Column(
-        children: [
-          const FilterWidget(),
-          Consumer(
-            builder: (context, ref, child) {
-              final filter = ref.watch(favoriteStatusProvider);
-              switch (filter) {
-                case FavoriteStatus.all:
-                  return FilmsList(provider: allFilmsProvider);
-                case FavoriteStatus.favorite:
-                  return FilmsList(provider: favoriteFilmsProvider);
-                case FavoriteStatus.notFavorite:
-                  return FilmsList(provider: notFvoriteFilmsProvider);
-              }
-            },
-          )
-        ],
+      floatingActionButton: FloatingActionButton(
+        // The read method is a utility to read a provider without listening to it
+        onPressed: () => ref.read(counterProvider.notifier).increment(),
+        child: const Icon(Icons.add),
       ),
-    );
-  }
-}
-
-class FilmsList extends ConsumerWidget {
-  final AlwaysAliveProviderBase<Iterable<Film>> provider;
-
-  const FilmsList({
-    required this.provider,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final films = ref.watch(provider);
-    return Expanded(
-      child: ListView.builder(
-        itemCount: films.length,
-        itemBuilder: (context, index) {
-          final film = films.elementAt(index);
-          final favoriteIcon = film.isFavorite
-              ? const Icon(Icons.favorite)
-              : const Icon(Icons.favorite_border);
-
-          return ListTile(
-            title: Text(film.title),
-            subtitle: Text(film.description),
-            trailing: IconButton(
-              icon: favoriteIcon,
-              onPressed: () {
-                final isFavorite = !film.isFavorite;
-                ref.read(allFilmsProvider.notifier).update(film, isFavorite);
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class FilterWidget extends StatelessWidget {
-  const FilterWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        return DropdownButton(
-          value: ref.watch(favoriteStatusProvider),
-          items: FavoriteStatus.values
-              .map(
-                (fs) => DropdownMenuItem(
-                  value: fs,
-                  child: Text(fs.toString().split('.').last),
-                ),
-              )
-              .toList(),
-          onChanged: (FavoriteStatus? fs) {
-            ref.read(favoriteStatusProvider.notifier).state = fs!;
-          },
-        );
-      },
     );
   }
 }
