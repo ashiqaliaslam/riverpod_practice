@@ -8,12 +8,7 @@ part of 'main.dart';
 
 String _$counterHash() => r'4243b34530f53accfd9014a9f0e316fe304ada3e';
 
-/// Annotating a class by `@riverpod` defines a new shared state for your application,
-/// accessible using the generated [counterProvider].
-/// This class is both responsible for initializing the state (through the [build] method)
-/// and exposing ways to modify it (cf [increment]).
-///
-/// Copied from [Counter].
+/// See also [Counter].
 @ProviderFor(Counter)
 final counterProvider = AutoDisposeNotifierProvider<Counter, int>.internal(
   Counter.new,
