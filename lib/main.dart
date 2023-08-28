@@ -19,6 +19,10 @@ class Counter extends _$Counter {
   void increment() => state++;
 }
 
+final nameProvider = Provider((ref) {
+  return "ok";
+});
+
 class Home extends ConsumerWidget {
   const Home({super.key});
 
