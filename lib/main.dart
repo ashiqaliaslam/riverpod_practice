@@ -1,9 +1,13 @@
-import 'package:example1/app.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'main.g.dart';
+
+@riverpod
+String helloWorld(HelloWorldRef ref) {
+  return 'Hello, World!';
+}
 
 void main() {
   runApp(
@@ -11,69 +15,42 @@ void main() {
   );
 }
 
-@riverpod
-class Counter extends _$Counter {
-  @override
-  int build() => 0;
+const String titleString = 'Demo Home Page';
 
-  void increment() => state++;
-}
-
-final nameProvider = Provider((ref) {
-  return "ok";
-});
-
-class Home extends ConsumerWidget {
-  const Home({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Counter example')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                        builder: (context) => const CounterPage()),
-                  );
-                },
-                child: const Text('Go to Counter Page'))
-          ],
-        ),
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: ThemeMode.dark,
+      home: const MyHomePage(title: titleString),
     );
   }
 }
 
-class CounterPage extends ConsumerWidget {
-  const CounterPage({Key? key}) : super(key: key);
+class MyHomePage extends ConsumerWidget {
+  const MyHomePage({Key? key, required this.title}) : super(key: key);
+
+  final String title;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // final int counter = ref.watch(counterProvider);
-
+    final String value = ref.watch(helloWorldProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Counter'),
-        actions: [
-          IconButton(
-              onPressed: () => ref.invalidate(counterProvider),
-              icon: const Icon(Icons.refresh))
-        ],
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        title: Text(title),
       ),
       body: Center(
-        child: Text(
-          ref.watch(counterProvider).toString(),
-          style: Theme.of(context).textTheme.displayLarge,
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () => ref.read(counterProvider.notifier).increment(),
+        child: Text(value),
       ),
     );
   }
